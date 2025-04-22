@@ -1,14 +1,21 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-
+#include <chrono>
+#include <thread>
+#include <conio.h>
+#include <atomic>
+char key;
+std::atomic<float> xOffset(0.0f);
+std::atomic<float> yOffset(0.0f);
 // Vertex shader source
+
 const char* vertexShaderSource = R"(
 #version 330 core
 layout (location = 0) in vec3 aPos;
-
+uniform vec2 uOffset;
 void main() {
-    gl_Position = vec4(aPos, 1.0);
+    gl_Position = vec4(aPos.x + uOffset.x, aPos.y + uOffset.y, aPos.z, 1.0);
 }
 )";
 
@@ -21,8 +28,40 @@ void main() {
     FragColor = vec4(1.0, 0.5, 0.2, 1.0);
 }
 )";
+    float vertices[] = {
+         0.0f,  0.5f, 0.0f, // top
+        -0.5f, -0.5f, 0.0f, // bottom left
+         0.5f, -0.5f, 0.0f  // bottom right
+    };
+void wait(int milliseconds) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
 
+void getKey() {
+    float xVel = 0;
+    float yVel = 0;
+    float xAcc = 0;
+    float yAcc = 0;
+    while(true) {
+        char key = getch();
+        if (key == 75) {
+            xOffset = -0.1f + xOffset;  // Adjust this step value as you like
+        }
+        if (key == 77) {
+            xOffset = 0.1f + xOffset;  // Adjust this step value as you like
+        }
+        if (key == 72) {
+            yOffset = 0.1f + yOffset;  // Adjust this step value as you like
+        }
+        if (key == 80) {
+            yOffset = -0.1f + yOffset;  // Adjust this step value as you like
+        }
+        wait(10);
+    }
+}
 int main() {
+    // key = getch();
+    // std::cout << key << std::endl;
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -42,11 +81,7 @@ int main() {
     }
 
     // Vertex data
-    float vertices[] = {
-         0.0f,  0.5f, 0.0f, // top
-        -0.5f, -0.5f, 0.0f, // bottom left
-         0.5f, -0.5f, 0.0f  // bottom right
-    };
+
 
     // Vertex Array Object, Vertex Buffer Object
     unsigned int VAO, VBO;
@@ -81,18 +116,27 @@ int main() {
     // Clean up shaders
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    
+    std::thread t(getKey);
     // Render loop
     while (!glfwWindowShouldClose(window)) {
+
+        
+        float x_offset = xOffset.load();  // Atomic read
+        float y_offset = yOffset.load();  // Atomic read
+        int offsetLoc = glGetUniformLocation(shaderProgram, "uOffset");
+
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         
         glUseProgram(shaderProgram);
+        glUniform2f(offsetLoc, x_offset, y_offset);
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         
         glfwSwapBuffers(window);
         glfwPollEvents();
+        wait(10);
+        
     }
 
     // Cleanup
