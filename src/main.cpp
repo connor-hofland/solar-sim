@@ -30,7 +30,9 @@ void main() {
 }
 )";
 struct VertexLabel {
-    float x1, y2, z3, x2, y2, z3, x3, y3, z3;
+    float x1, y1, z1;
+    float x2, y2, z2;
+    float x3, y3, z3;
 };
 struct Point {
     float x, y;
@@ -64,7 +66,7 @@ void Objects::initialize() {
     glBindVertexArray(VAO);
     
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
     
     // Vertex attribute pointer
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
