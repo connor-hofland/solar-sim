@@ -5,6 +5,7 @@
 #include <thread>
 #include <conio.h>
 #include <atomic>
+#include <vector>
 char key;
 std::atomic<float> xOffset(0.0f);
 std::atomic<float> yOffset(0.0f);
@@ -28,63 +29,35 @@ void main() {
     FragColor = vec4(1.0, 0.5, 0.2, 1.0);
 }
 )";
-    float vertices[] = {
-         0.0f,  0.5f, 0.0f, // top
-        -0.5f, -0.5f, 0.0f, // bottom left
-         0.5f, -0.5f, 0.0f  // bottom right
-    };
-void wait(int milliseconds) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+struct VertexLabel {
+    float x1, y2, z3, x2, y2, z3, x3, y3, z3;
+};
+struct Point {
+    float x, y;
+};
+
+class Objects {
+    public:
+        Objects(std::vector<float> init_vertices, Point init_acceleration, Point init_velocity);
+        std::vector<float> vertices;
+        Point acceleration;
+        Point velocity;
+        unsigned int VAO, VBO;
+        unsigned int shaderProgram;
+        void initialize();
+        void render();
+        void cleanup();
+        
+};
+
+Objects::Objects(std::vector<float> init_vertices, Point init_acceleration, Point init_velocity) {
+    vertices = init_vertices;
+    acceleration = init_acceleration;
+    velocity = init_velocity;
 }
-
-void getKey() {
-    float xVel = 0;
-    float yVel = 0;
-    float xAcc = 0;
-    float yAcc = 0;
-    while(true) {
-        char key = getch();
-        if (key == 75) {
-            xOffset = -0.1f + xOffset;  // Adjust this step value as you like
-        }
-        if (key == 77) {
-            xOffset = 0.1f + xOffset;  // Adjust this step value as you like
-        }
-        if (key == 72) {
-            yOffset = 0.1f + yOffset;  // Adjust this step value as you like
-        }
-        if (key == 80) {
-            yOffset = -0.1f + yOffset;  // Adjust this step value as you like
-        }
-        wait(10);
-    }
-}
-int main() {
-    // key = getch();
-    // std::cout << key << std::endl;
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Triangle", nullptr, nullptr);
-    if (!window) {
-        std::cerr << "Failed to create GLFW window\n";
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize GLAD\n";
-        return -1;
-    }
-
-    // Vertex data
-
-
+void Objects::initialize() {
     // Vertex Array Object, Vertex Buffer Object
-    unsigned int VAO, VBO;
+    
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     
@@ -108,7 +81,7 @@ int main() {
     glCompileShader(fragmentShader);
     
     // Shader program
-    unsigned int shaderProgram = glCreateProgram();
+    shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
@@ -116,11 +89,8 @@ int main() {
     // Clean up shaders
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    std::thread t(getKey);
-    // Render loop
-    while (!glfwWindowShouldClose(window)) {
-
-        
+}
+void Objects::render() {
         float x_offset = xOffset.load();  // Atomic read
         float y_offset = yOffset.load();  // Atomic read
         int offsetLoc = glGetUniformLocation(shaderProgram, "uOffset");
@@ -132,16 +102,71 @@ int main() {
         glUniform2f(offsetLoc, x_offset, y_offset);
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-        wait(10);
-        
-    }
+}
 
-    // Cleanup
+void Objects::cleanup() {
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+}
+void wait(int milliseconds) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+void getKey() {
+    float xVel = 0;
+    float yVel = 0;
+    float xAcc = 0;
+    float yAcc = 0;
+    while(true) {
+        char key = getch();
+        if (key == 75) {
+            xOffset = -0.1f + xOffset;  // Adjust this step value as you like
+        }
+        if (key == 77) {
+            xOffset = 0.1f + xOffset;  // Adjust this step value as you like
+        }
+        if (key == 72) {
+            yOffset = 0.1f + yOffset;  // Adjust this step value as you like
+        }
+        if (key == 80) {
+            yOffset = -0.1f + yOffset;  // Adjust this step value as you like
+        }
+        wait(10);
+    }
+}
+int main() {
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Triangle", nullptr, nullptr);
+    if (!window) {
+        std::cerr << "Failed to create GLFW window\n";
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cerr << "Failed to initialize GLAD\n";
+        return -1;
+    }
+    
+    // Vertex data
+    Objects triangle({0.0f,  0.5f, 0.0f, -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f
+    }, {0, 0}, {0, 0});
+
+
+    std::thread t(getKey);
+    // Render loop
+    while (!glfwWindowShouldClose(window)) {
+        triangle.render();     
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+        wait(10);  
+    }
+    // Cleanup
+    triangle.cleanup();
     
     glfwDestroyWindow(window);
     glfwTerminate();
