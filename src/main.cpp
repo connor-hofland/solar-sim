@@ -11,6 +11,11 @@
 
 // Global shader program
 unsigned int shaderProgram;
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
+float yaw   = -90.0f; // starting pointing toward negative z
+float pitch = 0.0f;   // starting level
 
 enum ObjectType {
     TRIANGLE,
@@ -114,19 +119,47 @@ void Objects::cleanup() {
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
 }
+void updateCameraVectors() {
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(front);
+}
 
 void processInput(GLFWwindow* window, Objects& obj) {
+    float cameraRotateSpeed = 1.0f; // degrees per frame
+    float cameraSpeed = 0.5f; // degrees per frame
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        cameraPos += cameraSpeed * cameraFront;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        cameraPos -= cameraSpeed * cameraFront;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    }
+
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-        obj.offset.x -= 0.01f;
+        yaw -= cameraRotateSpeed;
+        updateCameraVectors();
     }
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-        obj.offset.x += 0.01f;
+        yaw += cameraRotateSpeed;
+        updateCameraVectors();
     }
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-        obj.offset.y += 0.01f;
+        pitch += cameraRotateSpeed;
+        if (pitch > 89.0f) pitch = 89.0f;
+        updateCameraVectors();
     }
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-        obj.offset.y -= 0.01f;
+        pitch -= cameraRotateSpeed;
+        if (pitch < -89.0f) pitch = -89.0f;
+        updateCameraVectors();
     }
 }
 
@@ -170,13 +203,10 @@ void compileShaders() {
 
 void setCamera() {
     glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
-                                 glm::vec3(0.0f, 0.0f, 0.0f),
-                                 glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), 
                                             1700.0f / 1100.0f, 
                                             0.1f, 100.0f);
-
     int modelLoc = glGetUniformLocation(shaderProgram, "model");
     int viewLoc = glGetUniformLocation(shaderProgram, "view");
     int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
