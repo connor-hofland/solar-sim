@@ -3,10 +3,8 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
-#include <conio.h>
 #include <atomic>
 #include <vector>
-char key;
 std::atomic<float> xOffset(0.0f);
 std::atomic<float> yOffset(0.0f);
 // Vertex shader source
@@ -110,29 +108,18 @@ void Objects::cleanup() {
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
 }
-void wait(int milliseconds) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
-}
-void getKey() {
-    float xVel = 0;
-    float yVel = 0;
-    float xAcc = 0;
-    float yAcc = 0;
-    while(true) {
-        char key = getch();
-        if (key == 75) {
-            xOffset = -0.1f + xOffset;  // Adjust this step value as you like
-        }
-        if (key == 77) {
-            xOffset = 0.1f + xOffset;  // Adjust this step value as you like
-        }
-        if (key == 72) {
-            yOffset = 0.1f + yOffset;  // Adjust this step value as you like
-        }
-        if (key == 80) {
-            yOffset = -0.1f + yOffset;  // Adjust this step value as you like
-        }
-        wait(10);
+void processInput(GLFWwindow* window) {
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        xOffset = xOffset - .01f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        xOffset = xOffset + .01f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        yOffset = yOffset + 0.01f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        yOffset = yOffset - 0.01f;
     }
 }
 int main() {
@@ -153,18 +140,19 @@ int main() {
         std::cerr << "Failed to initialize GLAD\n";
         return -1;
     }
-    
+
+    glfwSwapInterval(1);  // <-- NEW: Turn on V-Sync!
+
     // Vertex data
     Objects triangle({0.0f,  0.5f, 0.0f, -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f}, {0, 0}, {0, 0});
+    triangle.initialize();
 
-
-    std::thread t(getKey);
     // Render loop
     while (!glfwWindowShouldClose(window)) {
+        processInput(window);
         triangle.render();     
         glfwSwapBuffers(window);
         glfwPollEvents();
-        wait(10);  
     }
     // Cleanup
     triangle.cleanup();

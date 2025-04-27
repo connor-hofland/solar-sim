@@ -1,34 +1,36 @@
-# Makefile for building with MSVC cl
-# Requires nmake
-
-# Compiler and linker
-CC = cl
-LINK = link
+# Compiler
+CXX = g++
 
 # Source files
 SRC = src/main.cpp src/glad.c
 
 # Include directories
-INCLUDE_DIRS = /Iinclude
+INCLUDE_DIRS = -Iinclude
 
-# Library directory
-LIB_DIR = lib
+# Library directories
+LIB_DIRS = -Llib
 
 # Libraries
-LIBS = glfw3.lib opengl32.lib user32.lib gdi32.lib shell32.lib
+LIBS = -lglfw -lGL -lm -ldl -lpthread
+ifeq ($(OS),Windows_NT)
+    RM = del
+    OUT = main.exe
+else
+    RM = rm -f
+    OUT = main
+endif
 
-# Output executable
-OUT = main.exe
+# (rest of Makefile stays the same, just replace 'rm' with '$(RM)' and 'main' with '$(OUT)')
+
 
 # Compiler and linker flags
-CFLAGS = /MD $(INCLUDE_DIRS)
-LFLAGS = /link /LIBPATH:$(LIB_DIR) $(LIBS)
+CXXFLAGS = -std=c++11 $(INCLUDE_DIRS)
+LDFLAGS = $(LIB_DIRS) $(LIBS)
 
 # Build target
 all:
-	$(CC) $(SRC) $(CFLAGS) $(LFLAGS) /Fe$(OUT)
+	$(CXX) $(SRC) $(CXXFLAGS) $(LDFLAGS) -o $(OUT)
 
 # Clean target
 clean:
-	del *.obj
-	del $(OUT)
+	$(RM) -f *.o $(OUT)
