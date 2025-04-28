@@ -215,6 +215,42 @@ void setCamera() {
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 }
+std::vector<float> generateCubeVertices(float cx, float cy, float cz, float r) {
+    std::vector<float> vertices = {
+        // x, y, z
+        cx - r, cy - r, cz - r, // 0
+        cx + r, cy - r, cz - r, // 1
+        cx + r, cy + r, cz - r, // 2
+        cx - r, cy + r, cz - r, // 3
+        cx - r, cy - r, cz + r, // 4
+        cx + r, cy - r, cz + r, // 5
+        cx + r, cy + r, cz + r, // 6
+        cx - r, cy + r, cz + r  // 7
+    };
+    return vertices;
+}
+std::vector<unsigned int> generateCubeIndices() {
+    return {
+        // Back face
+        0, 1, 2,
+        2, 3, 0,
+        // Front face
+        4, 5, 6,
+        6, 7, 4,
+        // Left face
+        4, 7, 3,
+        3, 0, 4,
+        // Right face
+        1, 5, 6,
+        6, 2, 1,
+        // Bottom face
+        4, 5, 1,
+        1, 0, 4,
+        // Top face
+        3, 2, 6,
+        6, 7, 3
+    };
+}
 
 std::vector<float> generateSphereVertices(float radius, int sectorCount, int stackCount) {
     std::vector<float> vertices;
@@ -274,8 +310,8 @@ int main() {
 
     glfwSwapInterval(1); // Enable V-Sync
 
-    std::vector<float> vertices = generateSphereVertices(0.5f, 36, 18);
-    std::vector<unsigned int> indices = generateSphereIndices(36, 18);
+    std::vector<float> vertices = generateCubeVertices(0.f, 0.f, 0.f, 0.5f);
+    std::vector<unsigned int> indices = generateCubeIndices();
 
     Objects sphere(vertices, indices, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, SPHERE);
 
