@@ -2,7 +2,7 @@
 CXX = g++
 
 # Source files
-SRC = src/main.cpp src/glad.c
+SRC = src/*
 
 # Include directories
 INCLUDE_DIRS = -Iinclude
