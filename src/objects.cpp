@@ -40,7 +40,12 @@ void Objects::update() {
     velocity.y += acceleration.y;
     velocity.z += acceleration.z;
     offset.x += velocity.x;
-    offset.y += velocity.y;
+    if (offset.y >= -1) {
+        offset.y += velocity.y;
+    }
+    else {
+        offset.y = 20;
+    }
     offset.z += velocity.z;
 }
 

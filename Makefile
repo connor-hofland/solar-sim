@@ -15,6 +15,7 @@ LIBS = -lglfw -lGL -lm -ldl -lpthread
 ifeq ($(OS),Windows_NT)
     RM = del
     OUT = main.exe
+    LIBS = -lglfw3 -lopengl32 -lgdi32 -luser32 -lm -lpthread
 else
     RM = rm -f
     OUT = main

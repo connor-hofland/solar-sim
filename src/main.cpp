@@ -13,7 +13,7 @@
 #include "camera.hpp"
 #include "structs.hpp"
 
-void processInput(GLFWwindow* window, Objects& obj) {
+void processInput(GLFWwindow* window) {
     float cameraRotateSpeed = 1.0f; // degrees per frame
     float cameraSpeed = 0.5f; // degrees per frame
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -71,32 +71,43 @@ int main() {
     }
 
     glfwSwapInterval(1); // Enable V-Sync
-
-    std::vector<float> vertices = generateCubeVertices(0.f, 0.f, 0.f, 0.5f);
-    std::vector<unsigned int> indices = generateCubeIndices();
-
-    Objects cube(vertices, indices, {0, 0, 0}, {0, 0, 0}, {0, 0, 0});
+    std::vector<float> vertices = generateSphereVertices(0.5f, 16, 32);
+    std::vector<unsigned int> indices = generateSphereIndices(16, 32);
+    Point acceleration = {0, -0.005, 0};
+    Point velocity = {0, 0, 0};
+    std::vector<Objects> spheres;
+    for (int i = 0; i < 10000; ++i) {
+        Point position = {(i % 10) * 2.0f, 50.0f, (i / 10) * 2.0f};
+        spheres.emplace_back(vertices, indices, acceleration, velocity, position);
+    }
 
     compileShaders();
-    cube.initialize();
+    for (auto& sphere : spheres) {
+        sphere.initialize();
+    }
     glEnable(GL_DEPTH_TEST);
-    cube.acceleration = {0.0005f, 0.f, 0.f};
+
     while (!glfwWindowShouldClose(window)) {
-        processInput(window, cube);
+        processInput(window);
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
         setCamera();
-        cube.update();
-        cube.render();
+        for (auto& sphere : spheres) {
+            sphere.update();
+            sphere.render();
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    cube.cleanup();
+    for (auto& sphere : spheres) {
+        sphere.cleanup();
+    }
+
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
